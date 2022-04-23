@@ -3,20 +3,32 @@ import { Update } from 'typegram'
 import { config } from 'dotenv'
 config()
 
-const token: string = process.env.BOT_TOKEN as string
+import { botToken } from './env'
+import api, { CATEGORIES } from './api'
 
-if (token === undefined || typeof token !== 'string' || token === '') {
-  throw new Error('BOT_TOKEN must be provided and be a valid string!')
-}
+const telegram: Telegram = new Telegram(botToken)
 
-const telegram: Telegram = new Telegram(token)
-
-const bot: Telegraf<Context<Update>> = new Telegraf(token)
+const bot: Telegraf<Context<Update>> = new Telegraf(botToken)
 
 const chatId: string = process.env.CHAT_ID as string
 
-bot.start((ctx) => {
-  ctx.reply('Hello ' + ctx.from.first_name + '!')
+bot.start(async (ctx) => {
+  try {
+    await api.get(CATEGORIES)
+  } catch (error) {
+    console.error('An error ocurred fetching the categories', error)
+    ctx.reply('An error ocurred fetching the categories. Please try again later.')
+  }
+
+  ctx.reply(
+    `Hello ${ctx.from.first_name}! I'm a bot that can help you to manage tasks for Lunch Money. For now I can only 
+    create new transactions.`,
+    Markup.inlineKeyboard([Markup.button.callback('Create a new transaction', 'createTransaction')])
+  )
+})
+
+bot.action('createTransaction', (ctx) => {
+  ctx.reply('Create transaction!!!')
 })
 
 bot.help((ctx) => {
